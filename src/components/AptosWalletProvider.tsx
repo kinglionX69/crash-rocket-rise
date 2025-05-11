@@ -4,7 +4,7 @@ import {
   NetworkName, 
   useWallet 
 } from '@aptos-labs/wallet-adapter-react';
-import { PetraWalletAdapter } from "petra-plugin-wallet-adapter";
+import { PetraWallet } from "petra-plugin-wallet-adapter";
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from "@/hooks/use-toast";
 
@@ -32,12 +32,12 @@ export const WalletContext = createContext<WalletContextType>({
 export const AptosWalletProvider = ({ children }: { children: ReactNode }) => {
   // Initialize wallet adapters
   const wallets = [
-    new PetraWalletAdapter(),
+    new PetraWallet(),
     // You can add more wallet adapters here as needed
   ];
 
   return (
-    <AptosWalletAdapterProvider plugins={wallets} autoConnect={true}>
+    <AptosWalletAdapterProvider wallets={wallets} autoConnect={true}>
       <WalletContextProvider>{children}</WalletContextProvider>
     </AptosWalletAdapterProvider>
   );
@@ -51,7 +51,7 @@ const WalletContextProvider = ({ children }: { children: ReactNode }) => {
     disconnect, 
     connected, 
     signMessage: aptosSignMessage,
-    connecting,
+    network,
   } = useWallet();
   const [isConnecting, setIsConnecting] = useState(false);
 
@@ -103,9 +103,9 @@ const WalletContextProvider = ({ children }: { children: ReactNode }) => {
     connectWallet,
     disconnectWallet,
     signMessage,
-    isConnecting: connecting || isConnecting,
+    isConnecting: isConnecting,
     isConnected: connected,
-    address: account?.address ?? null,
+    address: account?.address ? account.address.toString() : null,
   };
 
   return (
