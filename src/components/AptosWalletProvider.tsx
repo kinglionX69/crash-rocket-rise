@@ -37,7 +37,11 @@ export const AptosWalletProvider = ({ children }: { children: ReactNode }) => {
   ];
 
   return (
-    <AptosWalletAdapterProvider plugins={wallets} autoConnect={true}>
+    <AptosWalletAdapterProvider 
+      plugins={wallets} 
+      autoConnect={true}
+      name={NetworkName.TESTNET}
+    >
       <WalletContextProvider>{children}</WalletContextProvider>
     </AptosWalletAdapterProvider>
   );
