@@ -2,8 +2,7 @@
 import { 
   AptosWalletAdapterProvider,
   NetworkName, 
-  useWallet, 
-  WalletName
+  useWallet
 } from '@aptos-labs/wallet-adapter-react';
 import { PetraWallet } from "petra-plugin-wallet-adapter";
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -38,7 +37,7 @@ export const AptosWalletProvider = ({ children }: { children: ReactNode }) => {
   ];
 
   return (
-    <AptosWalletAdapterProvider plugins={wallets} autoConnect={true}>
+    <AptosWalletAdapterProvider wallets={wallets} autoConnect={true}>
       <WalletContextProvider>{children}</WalletContextProvider>
     </AptosWalletAdapterProvider>
   );
@@ -60,7 +59,7 @@ const WalletContextProvider = ({ children }: { children: ReactNode }) => {
   const connectWallet = async () => {
     try {
       setIsConnecting(true);
-      await connect('petra' as WalletName);
+      await connect('petra');
     } catch (error) {
       console.error('Error connecting wallet:', error);
       toast({
