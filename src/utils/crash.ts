@@ -73,7 +73,7 @@ export const generateAvatar = (username: string): string => {
 };
 
 // Generate mock data for game history
-export const generateMockGameHistory = (count = 15): { crashPoint: number; id: string }[] => {
+export const generateMockGameHistory = (count = 15): { id: string; crashPoint: number; timestamp: number; }[] => {
   return Array.from({ length: count }, (_, i) => ({
     id: `game-${Date.now() - i * 30000}`,
     crashPoint: generateCrashPoint(),
