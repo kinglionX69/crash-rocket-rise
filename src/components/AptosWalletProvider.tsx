@@ -1,8 +1,7 @@
 
 import { 
   AptosWalletAdapterProvider,
-  NetworkName, 
-  useWallet
+  NetworkName
 } from '@aptos-labs/wallet-adapter-react';
 import { PetraWallet } from "petra-plugin-wallet-adapter";
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -40,7 +39,7 @@ export const AptosWalletProvider = ({ children }: { children: ReactNode }) => {
     <AptosWalletAdapterProvider 
       wallets={wallets} 
       autoConnect={true}
-      name={NetworkName.Testnet}
+      network={NetworkName.Testnet}
     >
       <WalletContextProvider>{children}</WalletContextProvider>
     </AptosWalletAdapterProvider>
