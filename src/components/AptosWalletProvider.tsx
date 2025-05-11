@@ -2,7 +2,8 @@
 import { 
   AptosWalletAdapterProvider,
   NetworkName, 
-  useWallet 
+  useWallet, 
+  WalletName
 } from '@aptos-labs/wallet-adapter-react';
 import { PetraWallet } from "petra-plugin-wallet-adapter";
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -37,7 +38,7 @@ export const AptosWalletProvider = ({ children }: { children: ReactNode }) => {
   ];
 
   return (
-    <AptosWalletAdapterProvider wallets={wallets} autoConnect={true}>
+    <AptosWalletAdapterProvider plugins={wallets} autoConnect={true}>
       <WalletContextProvider>{children}</WalletContextProvider>
     </AptosWalletAdapterProvider>
   );
@@ -59,7 +60,7 @@ const WalletContextProvider = ({ children }: { children: ReactNode }) => {
   const connectWallet = async () => {
     try {
       setIsConnecting(true);
-      await connect('petra');
+      await connect('petra' as WalletName);
     } catch (error) {
       console.error('Error connecting wallet:', error);
       toast({
@@ -86,7 +87,8 @@ const WalletContextProvider = ({ children }: { children: ReactNode }) => {
         message,
         nonce: new Date().getTime().toString()
       });
-      return response;
+      // Convert the response to string to match our interface
+      return typeof response === 'string' ? response : JSON.stringify(response);
     } catch (error) {
       console.error('Error signing message:', error);
       toast({
@@ -99,7 +101,7 @@ const WalletContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Expose wallet context values
-  const contextValue = {
+  const contextValue: WalletContextType = {
     connectWallet,
     disconnectWallet,
     signMessage,

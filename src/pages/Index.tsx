@@ -7,7 +7,7 @@ import { User } from "@/types/game";
 import { WalletUser } from "@/types/wallet";
 
 const Index = () => {
-  const [user, setUser] = useState<User & WalletUser>({
+  const [user, setUser] = useState<User & Partial<WalletUser>>({
     id: "user-" + Math.random().toString(36).substring(2, 9),
     username: "",
     balance: 10000,

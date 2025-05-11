@@ -8,7 +8,7 @@ import { User } from "@/types/game";
 import { WalletUser } from "@/types/wallet";
 
 interface WalletConnectProps {
-  user: User;
+  user: User & Partial<WalletUser>;
   onWalletConnect: (walletDetails: WalletUser) => void;
 }
 
@@ -84,10 +84,11 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ user, onWalletConnect }) 
 
   // If connected but not authenticated, prompt to sign message
   React.useEffect(() => {
-    if (isConnected && address && !user.isAuthenticated && !isSigningIn) {
+    const isUserAuthenticated = user.isAuthenticated ?? false;
+    if (isConnected && address && !isUserAuthenticated && !isSigningIn) {
       handleSignMessage();
     }
-  }, [isConnected, address, user.isAuthenticated]);
+  }, [isConnected, address, user.isAuthenticated, isSigningIn]);
 
   return (
     <div className="flex items-center">
@@ -110,7 +111,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ user, onWalletConnect }) 
             </span>
           )}
         </Button>
-      ) : !user.isAuthenticated ? (
+      ) : !(user.isAuthenticated ?? false) ? (
         <Button 
           variant="default" 
           className="bg-crash-green hover:bg-crash-green/80"

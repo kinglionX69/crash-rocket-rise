@@ -28,6 +28,7 @@ export interface User {
   username: string;
   balance: number;
   avatar: string;
+  isAuthenticated?: boolean; // Added isAuthenticated property
 }
 
 export interface ChatMessage {
