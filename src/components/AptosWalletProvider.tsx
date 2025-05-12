@@ -1,3 +1,4 @@
+
 import { 
   AptosWalletAdapterProvider,
   useWallet
@@ -28,15 +29,15 @@ export const WalletContext = createContext<WalletContextType>({
 
 // Create the Aptos wallet provider component
 export const AptosWalletProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize wallet adapters - using 'plugins' which is the correct prop name for the version we have
-  const plugins = [
+  // Initialize wallet adapters - correctly using the prop expected by the library
+  const wallets = [
     new PetraWallet(),
     // You can add more wallet adapters here as needed
   ];
 
   return (
     <AptosWalletAdapterProvider 
-      plugins={plugins} 
+      wallets={wallets} 
       autoConnect={true}
     >
       <WalletContextProvider>{children}</WalletContextProvider>
