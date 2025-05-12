@@ -1,8 +1,7 @@
 
 import { 
-  WalletProvider,
-  useWallet as useAptosWallet,
-  NetworkName
+  AptosWalletAdapterProvider,
+  useWallet
 } from '@aptos-labs/wallet-adapter-react';
 import { PetraWallet } from "petra-plugin-wallet-adapter";
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -31,39 +30,31 @@ export const WalletContext = createContext<WalletContextType>({
 // Create the Aptos wallet provider component
 export const AptosWalletProvider = ({ children }: { children: ReactNode }) => {
   // Initialize wallet adapters
-  const wallets = [
+  const plugins = [
     new PetraWallet(),
     // You can add more wallet adapters here as needed
   ];
 
   return (
-    <WalletProvider 
-      wallets={wallets} 
+    <AptosWalletAdapterProvider 
+      plugins={plugins} 
       autoConnect={true}
-      network={NetworkName.Testnet}
     >
       <WalletContextProvider>{children}</WalletContextProvider>
-    </WalletProvider>
+    </AptosWalletAdapterProvider>
   );
 };
 
 // Create the wallet context provider component
 const WalletContextProvider = ({ children }: { children: ReactNode }) => {
-  const { 
-    connect, 
-    account, 
-    disconnect, 
-    connected, 
-    signMessage: aptosSignMessage,
-    network,
-  } = useAptosWallet();
+  const wallet = useWallet();
   const [isConnecting, setIsConnecting] = useState(false);
 
   // Connect wallet function
   const connectWallet = async () => {
     try {
       setIsConnecting(true);
-      await connect('petra');
+      await wallet.connect('petra');
     } catch (error) {
       console.error('Error connecting wallet:', error);
       toast({
@@ -78,15 +69,15 @@ const WalletContextProvider = ({ children }: { children: ReactNode }) => {
 
   // Disconnect wallet function
   const disconnectWallet = () => {
-    disconnect();
+    wallet.disconnect();
   };
 
   // Sign message function
   const signMessage = async (message: string): Promise<string | undefined> => {
-    if (!connected || !account) return undefined;
+    if (!wallet.connected || !wallet.account) return undefined;
     
     try {
-      const response = await aptosSignMessage({
+      const response = await wallet.signMessage({
         message,
         nonce: new Date().getTime().toString()
       });
@@ -109,8 +100,8 @@ const WalletContextProvider = ({ children }: { children: ReactNode }) => {
     disconnectWallet,
     signMessage,
     isConnecting: isConnecting,
-    isConnected: connected,
-    address: account?.address ? account.address.toString() : null,
+    isConnected: wallet.connected,
+    address: wallet.account?.address ? wallet.account.address.toString() : null,
   };
 
   return (
