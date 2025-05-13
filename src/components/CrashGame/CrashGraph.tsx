@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState } from "react";
 import { GameStatus } from "@/types/game";
 import { formatMultiplier, getMultiplierColor } from "@/utils/crash";
@@ -255,22 +256,49 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
         className="w-full h-full"
       />
       
-      {/* Rocket animation */}
+      {/* Enhanced Rocket Animation */}
       {status === GameStatus.IN_PROGRESS && (
         <div 
-          className="absolute transition-all duration-100 transform -translate-x-1/2 -translate-y-1/2 z-10"
+          className="absolute transition-all duration-100 z-10"
           style={{ 
             left: `${rocketPosition.x}px`, 
             top: `${rocketPosition.y}px`,
             transform: `translate(-50%, -50%) rotate(${calculateRocketRotation()}deg)`,
           }}
         >
+          {/* Rocket flames */}
+          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full z-0">
+            <div className="w-4 h-8 bg-gradient-to-t from-yellow-500 via-orange-500 to-transparent rounded-full animate-pulse opacity-80"></div>
+          </div>
+          
+          {/* Rocket shadow for better visibility */}
+          <div className="absolute inset-0 scale-110 opacity-30 blur-sm">
+            <Rocket 
+              size={36} 
+              className="rocket-icon"
+              fill="black"
+              color="black" 
+            />
+          </div>
+          
+          {/* Main rocket */}
           <Rocket 
-            size={28} 
-            className="rocket-icon animate-pulse-grow" 
+            size={32} 
+            className="animate-[pulse_1s_ease-in-out_infinite]" 
             fill={getMultiplierColor(multiplier)}
-            color={getMultiplierColor(multiplier)} 
+            color={getMultiplierColor(multiplier)}
+            strokeWidth={1.5}
           />
+          
+          {/* Glowing effect around rocket */}
+          <div 
+            className="absolute inset-0 -z-10 rounded-full animate-pulse blur-md opacity-50"
+            style={{ 
+              backgroundColor: getMultiplierColor(multiplier),
+              width: '100%',
+              height: '100%'
+            }}
+          ></div>
         </div>
       )}
       
