@@ -72,6 +72,7 @@ const GameContainer: React.FC = () => {
   
   // Initialize game with some mock bets
   useEffect(() => {
+    console.log("Initializing game with mock bets");
     const mockBets = generateMockBets();
     setGame(prev => ({
       ...prev,
@@ -94,6 +95,7 @@ const GameContainer: React.FC = () => {
 
   // Game loop for updating multiplier
   const startGameLoop = useCallback(() => {
+    console.log("Starting game loop");
     if (gameLoopRef.current) clearInterval(gameLoopRef.current);
     
     const startTime = Date.now();
@@ -128,11 +130,13 @@ const GameContainer: React.FC = () => {
   
   // Game state machine
   useEffect(() => {
+    console.log("Game status changed:", game.status);
     if (timerRef.current) clearTimeout(timerRef.current);
     
     if (game.status === GameStatus.WAITING) {
       // Start the game after countdown
       const timeUntilStart = Math.max(0, game.startTime - Date.now());
+      console.log(`Game will start in ${timeUntilStart}ms`);
       
       timerRef.current = setTimeout(() => {
         setGame(prev => {
@@ -279,12 +283,14 @@ const GameContainer: React.FC = () => {
     setChatMessages(prev => [newMessage, ...prev].slice(0, 100));
   };
 
+  console.log("Rendering GameContainer");
+
   return (
     <div className="container mx-auto p-4">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Game Area */}
         <div className="lg:col-span-3">
-          <div className="mb-4">
+          <div className="mb-4" style={{minHeight: '400px'}}>
             <CrashGraph 
               multiplier={game.multiplier} 
               status={game.status} 

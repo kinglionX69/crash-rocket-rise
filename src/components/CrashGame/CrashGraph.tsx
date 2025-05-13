@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState } from "react";
 import { GameStatus } from "@/types/game";
 import { formatMultiplier, getMultiplierColor } from "@/utils/crash";
@@ -12,11 +11,11 @@ interface CrashGraphProps {
 
 const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const [dimensions, setDimensions] = useState({ width: 800, height: 400 }); // Default size to ensure rendering
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
-  const [rocketPosition, setRocketPosition] = useState({ x: 0, y: 0 });
-  const [rocketVisible, setRocketVisible] = useState(false);
+  const [rocketPosition, setRocketPosition] = useState({ x: 50, y: 350 }); // Start position
+  const [rocketVisible, setRocketVisible] = useState(true); // Always show rocket initially
 
   // Effect to set up canvas and handle resizing
   useEffect(() => {
@@ -27,16 +26,55 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
       const parent = canvas.parentElement;
       if (parent) {
         const { width, height } = parent.getBoundingClientRect();
-        setDimensions({ width, height });
-        canvas.width = width;
-        canvas.height = height;
+        if (width > 0 && height > 0) {
+          setDimensions({ width, height });
+          canvas.width = width;
+          canvas.height = height;
+        } else {
+          // Fallback if parent dimensions are 0
+          setDimensions({ width: 800, height: 400 });
+          canvas.width = 800;
+          canvas.height = 400;
+        }
       }
     };
 
     updateDimensions();
     window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
+    
+    // Force redraw after a short delay
+    const timer = setTimeout(() => {
+      updateDimensions();
+      if (status === GameStatus.WAITING) {
+        drawInitialState(canvas.getContext('2d')!, canvas.width, canvas.height);
+      }
+    }, 100);
+
+    return () => {
+      window.removeEventListener("resize", updateDimensions);
+      clearTimeout(timer);
+    };
   }, []);
+
+  // Draw initial state to prevent blank canvas
+  const drawInitialState = (ctx: CanvasRenderingContext2D, width: number, height: number) => {
+    // Create gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, height);
+    gradient.addColorStop(0, '#0a1929');
+    gradient.addColorStop(1, '#0f2d4a');
+    
+    // Fill background
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
+    
+    // Draw grid
+    drawGrid(ctx, width, height);
+    
+    // Draw game history
+    if (gameHistory.length > 0) {
+      drawGameHistory(ctx, width, height, gameHistory);
+    }
+  };
 
   // Calculate position on the curve for the current multiplier
   const calculateCurvePosition = (multiplier: number, width: number, height: number) => {
@@ -64,6 +102,11 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+
+    if (canvas.width === 0 || canvas.height === 0) {
+      canvas.width = dimensions.width || 800;
+      canvas.height = dimensions.height || 400;
+    }
 
     // Create gradient background
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
@@ -121,24 +164,21 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
       drawCurve(ctx, canvas.width, canvas.height, multiplier, true);
       startTimeRef.current = null;
       
+      // Keep rocket visible but change position to crash point
+      const crashPos = calculateCurvePosition(multiplier, canvas.width, canvas.height);
+      setRocketPosition(crashPos);
+      
       // Stop animation
       if (animationRef.current !== null) {
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
       }
       
-      // Hide rocket after crash
-      setTimeout(() => {
-        setRocketVisible(false);
-      }, 500);
-      
     } else {
-      // Game is waiting
+      // Game is waiting - show a static rocket at start position
       startTimeRef.current = null;
-      setRocketVisible(false);
-      
-      // Reset rocket position
-      setRocketPosition({ x: 0, y: 0 });
+      setRocketVisible(true);
+      setRocketPosition({ x: 50, y: dimensions.height - 50 });
       
       // Stop animation
       if (animationRef.current !== null) {
@@ -285,15 +325,19 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
     return null;
   };
 
+  // Ensure component renders even if canvas is empty
+  console.log("Rendering CrashGraph component, status:", status, "dimensions:", dimensions);
+
   return (
-    <div className="crash-graph w-full h-full bg-crash-card rounded-lg overflow-hidden relative">
+    <div className="crash-graph w-full h-[400px] bg-crash-card rounded-lg overflow-hidden relative" style={{minHeight: '400px'}}>
       <canvas
         ref={canvasRef}
         className="w-full h-full"
+        style={{ display: 'block' }}
       />
       
-      {/* Enhanced Rocket */}
-      {status === GameStatus.IN_PROGRESS && rocketVisible && (
+      {/* Enhanced Rocket - Always render regardless of game state */}
+      {rocketVisible && (
         <div 
           className="absolute transition-all duration-100 z-20"
           style={{ 
@@ -304,18 +348,22 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
           }}
         >
           {/* Rocket Trail */}
-          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 translate-y-full z-0">
-            <div className="w-5 h-16 bg-gradient-to-t from-blue-500 via-cyan-400 to-transparent rounded-full animate-[rocket-thrust_0.6s_ease-in-out_infinite]"></div>
-          </div>
+          {status === GameStatus.IN_PROGRESS && (
+            <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 translate-y-full z-0">
+              <div className="w-8 h-24 bg-gradient-to-t from-blue-500 via-cyan-400 to-transparent rounded-full animate-[rocket-thrust_0.6s_ease-in-out_infinite]"></div>
+            </div>
+          )}
           
           {/* Sparks */}
-          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full">
-            <Sparkles
-              size={24}
-              className="text-cyan-300 animate-[pulse_0.5s_ease-in-out_infinite]"
-              fill="rgba(103, 232, 249, 0.7)"
-            />
-          </div>
+          {status === GameStatus.IN_PROGRESS && (
+            <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full">
+              <Sparkles
+                size={30}
+                className="text-cyan-300 animate-[pulse_0.5s_ease-in-out_infinite]"
+                fill="rgba(103, 232, 249, 0.7)"
+              />
+            </div>
+          )}
           
           {/* Main rocket */}
           <div className="relative">
@@ -333,7 +381,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
             
             {/* Rocket icon */}
             <Rocket 
-              size={50} 
+              size={80} 
               className="rocket-icon" 
               fill="#FFFFFF"
               color="#FFFFFF"
@@ -345,7 +393,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
           {multiplier > 2 && (
             <div className="absolute -right-4 -top-4">
               <Zap 
-                size={24} 
+                size={30} 
                 className="text-cyan-300 animate-pulse" 
                 fill="rgba(103, 232, 249, 0.7)"
               />
@@ -356,8 +404,8 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
       
       {status === GameStatus.CRASHED && (
         <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none">
-          <div className="animate-crash-out bg-red-500/20 backdrop-blur-sm rounded-full p-12 flex items-center justify-center">
-            <div className="text-7xl font-bold text-red-500 text-shadow-lg">
+          <div className="animate-crash-out bg-red-500/30 backdrop-blur-sm rounded-full p-12 flex items-center justify-center">
+            <div className="text-7xl font-bold text-red-500 text-shadow-lg animate-pulse">
               CRASH!
             </div>
           </div>
