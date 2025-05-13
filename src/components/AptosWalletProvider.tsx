@@ -35,8 +35,7 @@ export const WalletContext = createContext<WalletContextType>({
 export const AptosWalletProvider = ({ children }: { children: ReactNode }) => {
   return (
     <AptosWalletAdapterProvider
-      // @ts-ignore - workaround for build issue
-      wallets={wallets}
+      plugins={wallets}
       autoConnect={true}
       network={NetworkName.Testnet}
     >
