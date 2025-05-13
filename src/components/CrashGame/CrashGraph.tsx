@@ -2,7 +2,7 @@
 import React, { useRef, useEffect, useState } from "react";
 import { GameStatus } from "@/types/game";
 import { formatMultiplier, getMultiplierColor } from "@/utils/crash";
-import { Rocket } from "lucide-react";
+import { Rocket, Zap, Sparkles } from "lucide-react";
 
 interface CrashGraphProps {
   multiplier: number;
@@ -16,6 +16,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
   const [rocketPosition, setRocketPosition] = useState({ x: 0, y: 0 });
+  const [rocketVisible, setRocketVisible] = useState(false);
 
   // Effect to set up canvas and handle resizing
   useEffect(() => {
@@ -77,6 +78,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
     if (status === GameStatus.IN_PROGRESS) {
       if (!startTimeRef.current) {
         startTimeRef.current = Date.now();
+        setRocketVisible(true);
       }
       
       // Start animation
@@ -85,9 +87,6 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
           if (canvasRef.current && status === GameStatus.IN_PROGRESS) {
             const ctx = canvasRef.current.getContext("2d");
             if (ctx) {
-              const now = Date.now();
-              const elapsed = startTimeRef.current ? now - startTimeRef.current : 0;
-              
               // Clear and redraw each frame
               ctx.clearRect(0, 0, canvas.width, canvas.height);
               drawGrid(ctx, canvas.width, canvas.height);
@@ -113,9 +112,16 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
         cancelAnimationFrame(animationRef.current);
         animationRef.current = null;
       }
+      
+      // Hide rocket after crash
+      setTimeout(() => {
+        setRocketVisible(false);
+      }, 500);
+      
     } else {
       // Game is waiting
       startTimeRef.current = null;
+      setRocketVisible(false);
       
       // Reset rocket position
       setRocketPosition({ x: 0, y: 0 });
@@ -224,12 +230,12 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
       ctx.strokeStyle = getMultiplierColor(currentMultiplier);
     }
 
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 4; // Thicker line
     ctx.stroke();
 
     // Add glow effect for active games
     if (!crashed && !strokeColor) {
-      ctx.shadowBlur = 10;
+      ctx.shadowBlur = 15; // Increased glow
       ctx.shadowColor = getMultiplierColor(currentMultiplier);
       ctx.stroke();
       ctx.shadowBlur = 0;
@@ -257,24 +263,34 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
       />
       
       {/* Enhanced Rocket Animation */}
-      {status === GameStatus.IN_PROGRESS && (
+      {status === GameStatus.IN_PROGRESS && rocketVisible && (
         <div 
-          className="absolute transition-all duration-100 z-10"
+          className="absolute transition-all duration-100 z-20"
           style={{ 
             left: `${rocketPosition.x}px`, 
             top: `${rocketPosition.y}px`,
             transform: `translate(-50%, -50%) rotate(${calculateRocketRotation()}deg)`,
+            transition: 'top 0.1s ease, left 0.1s ease',
           }}
         >
-          {/* Rocket flames */}
-          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full z-0">
-            <div className="w-4 h-8 bg-gradient-to-t from-yellow-500 via-orange-500 to-transparent rounded-full animate-pulse opacity-80"></div>
+          {/* Rocket Trail */}
+          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full z-0">
+            <div className="w-5 h-12 bg-gradient-to-t from-orange-500 via-yellow-400 to-transparent rounded-full animate-[rocket-thrust_0.6s_ease-in-out_infinite]"></div>
+          </div>
+          
+          {/* Sparks */}
+          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full">
+            <Sparkles
+              size={20}
+              className="text-yellow-300 animate-[pulse_0.5s_ease-in-out_infinite]"
+              fill="rgba(253, 224, 71, 0.6)"
+            />
           </div>
           
           {/* Rocket shadow for better visibility */}
           <div className="absolute inset-0 scale-110 opacity-30 blur-sm">
             <Rocket 
-              size={36} 
+              size={48} 
               className="rocket-icon"
               fill="black"
               color="black" 
@@ -283,41 +299,64 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
           
           {/* Main rocket */}
           <Rocket 
-            size={32} 
-            className="animate-[pulse_1s_ease-in-out_infinite]" 
+            size={40} 
+            className="rocket-icon" 
             fill={getMultiplierColor(multiplier)}
-            color={getMultiplierColor(multiplier)}
+            color="white"
             strokeWidth={1.5}
           />
           
           {/* Glowing effect around rocket */}
           <div 
-            className="absolute inset-0 -z-10 rounded-full animate-pulse blur-md opacity-50"
+            className="absolute inset-0 -z-10 rounded-full animate-pulse blur-lg opacity-70"
             style={{ 
               backgroundColor: getMultiplierColor(multiplier),
-              width: '100%',
-              height: '100%'
+              width: '120%',
+              height: '120%',
+              transform: 'translate(-10%, -10%)',
+              filter: `drop-shadow(0 0 10px ${getMultiplierColor(multiplier)})`
             }}
           ></div>
+          
+          {/* Power indicator */}
+          {multiplier > 2 && (
+            <div className="absolute -right-4 -top-4">
+              <Zap 
+                size={20} 
+                className="text-yellow-300 animate-pulse" 
+                fill="rgba(253, 224, 71, 0.6)"
+              />
+            </div>
+          )}
         </div>
       )}
       
-      {status !== GameStatus.WAITING && (
-        <div 
-          className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                      text-5xl font-bold multiplier-text transition-all
-                      ${status === GameStatus.CRASHED ? 'animate-crash-out' : 'animate-crash-in'}`}
-          style={{ color: getMultiplierColor(multiplier) }}
-        >
-          {status === GameStatus.CRASHED ? 'CRASH!' : formatMultiplier(multiplier)}
+      {status === GameStatus.CRASHED && (
+        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none">
+          <div className="animate-crash-out bg-red-500/20 backdrop-blur-sm rounded-full p-12 flex items-center justify-center">
+            <div className="text-7xl font-bold text-red-500 text-shadow-lg">
+              CRASH!
+            </div>
+          </div>
         </div>
       )}
       
-      {status === GameStatus.WAITING && (
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl font-bold text-white animate-pulse">
-          Next Round Starting...
-        </div>
-      )}
+      <div 
+        className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
+                    text-6xl font-bold multiplier-text transition-all duration-200
+                    ${status === GameStatus.CRASHED ? 'text-red-500 scale-125' : ''}`}
+        style={{ 
+          color: status !== GameStatus.CRASHED ? getMultiplierColor(multiplier) : 'rgb(239, 68, 68)',
+          textShadow: '0 0 10px rgba(255,255,255,0.5)',
+          zIndex: 15
+        }}
+      >
+        {status === GameStatus.WAITING ? (
+          <div className="text-3xl animate-pulse">STARTING SOON</div>
+        ) : (
+          formatMultiplier(multiplier)
+        )}
+      </div>
     </div>
   );
 };

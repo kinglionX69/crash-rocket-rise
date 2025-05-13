@@ -80,6 +80,7 @@
 
 .multiplier-text {
   font-variant-numeric: tabular-nums;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
 }
 
 .crash-line {
@@ -111,11 +112,11 @@
 
 @keyframes rocket-thrust {
   0%, 100% {
-    transform: scale(0.9);
+    transform: scale(0.9) translateY(0);
     opacity: 0.7;
   }
   50% {
-    transform: scale(1.1);
+    transform: scale(1.1) translateY(3px);
     opacity: 1;
   }
 }
@@ -148,4 +149,19 @@
 
 .rocket-icon {
   filter: drop-shadow(0 0 8px currentColor);
+  transform-origin: center center;
+  animation: rocket-pulse 1s ease-in-out infinite;
+}
+
+@keyframes rocket-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.text-shadow-lg {
+  text-shadow: 0 0 20px rgba(255, 0, 0, 0.8), 0 0 10px rgba(255, 255, 255, 0.4);
 }
