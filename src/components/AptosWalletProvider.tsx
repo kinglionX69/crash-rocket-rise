@@ -1,11 +1,15 @@
 
-import { 
+import React from "react";
+import {
   AptosWalletAdapterProvider,
+  NetworkName,
   useWallet
-} from '@aptos-labs/wallet-adapter-react';
+} from "@aptos-labs/wallet-adapter-react";
 import { PetraWallet } from "petra-plugin-wallet-adapter";
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { toast } from "@/hooks/use-toast";
+
+const wallets = [new PetraWallet()];
 
 // Define the wallet context type
 interface WalletContextType {
@@ -29,16 +33,12 @@ export const WalletContext = createContext<WalletContextType>({
 
 // Create the Aptos wallet provider component
 export const AptosWalletProvider = ({ children }: { children: ReactNode }) => {
-  // Initialize wallet adapters
-  const walletAdapters = [
-    new PetraWallet(),
-    // You can add more wallet adapters here as needed
-  ];
-
   return (
-    <AptosWalletAdapterProvider 
-      plugins={walletAdapters} 
+    <AptosWalletAdapterProvider
+      // @ts-ignore - workaround for build issue
+      wallets={wallets}
       autoConnect={true}
+      network={NetworkName.Testnet}
     >
       <WalletContextProvider>{children}</WalletContextProvider>
     </AptosWalletAdapterProvider>
