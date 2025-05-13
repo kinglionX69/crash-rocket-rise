@@ -65,8 +65,14 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Create gradient background
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#0a1929');
+    gradient.addColorStop(1, '#0f2d4a');
+    
+    // Fill background
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Draw background grid
     drawGrid(ctx, canvas.width, canvas.height);
@@ -88,7 +94,15 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
             const ctx = canvasRef.current.getContext("2d");
             if (ctx) {
               // Clear and redraw each frame
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              // Create gradient background
+              const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+              gradient.addColorStop(0, '#0a1929');
+              gradient.addColorStop(1, '#0f2d4a');
+              
+              // Fill background
+              ctx.fillStyle = gradient;
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              
               drawGrid(ctx, canvas.width, canvas.height);
               drawGameHistory(ctx, canvas.width, canvas.height, gameHistory);
               drawCurve(ctx, canvas.width, canvas.height, multiplier);
@@ -178,15 +192,15 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
     height: number,
     history: Array<{ crashPoint: number }>
   ) => {
-    ctx.globalAlpha = 0.4;
-    history.slice(0, 5).forEach((game, index) => {
+    ctx.globalAlpha = 0.2;
+    history.slice(0, 3).forEach((game, index) => {
       drawCurve(
         ctx,
         width,
         height,
         game.crashPoint,
         true,
-        `rgba(255, 255, 255, ${0.3 - index * 0.05})`
+        `rgba(0, 180, 255, ${0.2 - index * 0.05})`
       );
     });
     ctx.globalAlpha = 1;
@@ -221,22 +235,22 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
       ctx.lineTo(x, y);
     }
 
-    // Determine color based on multiplier or crashed state
+    // Use a glowing cyan-blue color for the curve
     if (strokeColor) {
       ctx.strokeStyle = strokeColor;
     } else if (crashed) {
       ctx.strokeStyle = "#ff5353"; // Red for crashed
     } else {
-      ctx.strokeStyle = getMultiplierColor(currentMultiplier);
+      ctx.strokeStyle = "#00B4FF"; // Bright cyan-blue
     }
 
-    ctx.lineWidth = 4; // Thicker line
+    ctx.lineWidth = 5; // Thicker line
     ctx.stroke();
 
     // Add glow effect for active games
     if (!crashed && !strokeColor) {
-      ctx.shadowBlur = 15; // Increased glow
-      ctx.shadowColor = getMultiplierColor(currentMultiplier);
+      ctx.shadowBlur = 15; 
+      ctx.shadowColor = "#00B4FF";
       ctx.stroke();
       ctx.shadowBlur = 0;
     }
@@ -245,7 +259,6 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
   // Calculate rocket rotation angle based on curve tangent
   const calculateRocketRotation = () => {
     // Calculate a reasonable rotation for the rocket to follow the curve
-    // Higher multiplier = steeper curve = more vertical rotation
     const baseAngle = -45; // Start with a 45-degree upward angle
     const maxAngle = -80; // Almost vertical at high multipliers
     
@@ -255,6 +268,23 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
     return rotationAngle;
   };
 
+  // Format the current multiplier to match the example layout
+  const formatDisplayMultiplier = () => {
+    if (status === GameStatus.IN_PROGRESS || status === GameStatus.CRASHED) {
+      return (
+        <div className="text-center">
+          <div className="text-6xl font-bold">
+            {formatMultiplier(multiplier)}
+          </div>
+          <div className="text-sm text-cyan-400 mt-1">
+            Current Multiplier
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div className="crash-graph w-full h-full bg-crash-card rounded-lg overflow-hidden relative">
       <canvas
@@ -262,7 +292,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
         className="w-full h-full"
       />
       
-      {/* Enhanced Rocket Animation */}
+      {/* Enhanced Rocket */}
       {status === GameStatus.IN_PROGRESS && rocketVisible && (
         <div 
           className="absolute transition-all duration-100 z-20"
@@ -274,57 +304,50 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
           }}
         >
           {/* Rocket Trail */}
-          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full z-0">
-            <div className="w-5 h-12 bg-gradient-to-t from-orange-500 via-yellow-400 to-transparent rounded-full animate-[rocket-thrust_0.6s_ease-in-out_infinite]"></div>
+          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 translate-y-full z-0">
+            <div className="w-5 h-16 bg-gradient-to-t from-blue-500 via-cyan-400 to-transparent rounded-full animate-[rocket-thrust_0.6s_ease-in-out_infinite]"></div>
           </div>
           
           {/* Sparks */}
-          <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 translate-y-full">
+          <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 translate-y-full">
             <Sparkles
-              size={20}
-              className="text-yellow-300 animate-[pulse_0.5s_ease-in-out_infinite]"
-              fill="rgba(253, 224, 71, 0.6)"
-            />
-          </div>
-          
-          {/* Rocket shadow for better visibility */}
-          <div className="absolute inset-0 scale-110 opacity-30 blur-sm">
-            <Rocket 
-              size={48} 
-              className="rocket-icon"
-              fill="black"
-              color="black" 
+              size={24}
+              className="text-cyan-300 animate-[pulse_0.5s_ease-in-out_infinite]"
+              fill="rgba(103, 232, 249, 0.7)"
             />
           </div>
           
           {/* Main rocket */}
-          <Rocket 
-            size={40} 
-            className="rocket-icon" 
-            fill={getMultiplierColor(multiplier)}
-            color="white"
-            strokeWidth={1.5}
-          />
-          
-          {/* Glowing effect around rocket */}
-          <div 
-            className="absolute inset-0 -z-10 rounded-full animate-pulse blur-lg opacity-70"
-            style={{ 
-              backgroundColor: getMultiplierColor(multiplier),
-              width: '120%',
-              height: '120%',
-              transform: 'translate(-10%, -10%)',
-              filter: `drop-shadow(0 0 10px ${getMultiplierColor(multiplier)})`
-            }}
-          ></div>
+          <div className="relative">
+            {/* Glowing effect around rocket */}
+            <div 
+              className="absolute inset-0 -z-10 rounded-full animate-pulse blur-lg opacity-70"
+              style={{ 
+                backgroundColor: "#00B4FF",
+                width: '150%',
+                height: '150%',
+                transform: 'translate(-25%, -25%)',
+                filter: 'drop-shadow(0 0 15px #00B4FF)'
+              }}
+            ></div>
+            
+            {/* Rocket icon */}
+            <Rocket 
+              size={50} 
+              className="rocket-icon" 
+              fill="#FFFFFF"
+              color="#FFFFFF"
+              strokeWidth={1}
+            />
+          </div>
           
           {/* Power indicator */}
           {multiplier > 2 && (
             <div className="absolute -right-4 -top-4">
               <Zap 
-                size={20} 
-                className="text-yellow-300 animate-pulse" 
-                fill="rgba(253, 224, 71, 0.6)"
+                size={24} 
+                className="text-cyan-300 animate-pulse" 
+                fill="rgba(103, 232, 249, 0.7)"
               />
             </div>
           )}
@@ -341,22 +364,34 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
         </div>
       )}
       
+      {/* Center multiplier display similar to the example */}
       <div 
         className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 
-                    text-6xl font-bold multiplier-text transition-all duration-200
+                    transition-all duration-200 z-10
                     ${status === GameStatus.CRASHED ? 'text-red-500 scale-125' : ''}`}
-        style={{ 
-          color: status !== GameStatus.CRASHED ? getMultiplierColor(multiplier) : 'rgb(239, 68, 68)',
-          textShadow: '0 0 10px rgba(255,255,255,0.5)',
-          zIndex: 15
-        }}
       >
         {status === GameStatus.WAITING ? (
-          <div className="text-3xl animate-pulse">STARTING SOON</div>
+          <div className="text-3xl text-white animate-pulse">STARTING SOON</div>
         ) : (
-          formatMultiplier(multiplier)
+          formatDisplayMultiplier()
         )}
       </div>
+      
+      {/* History bar at bottom */}
+      {gameHistory.length > 0 && status === GameStatus.WAITING && (
+        <div className="absolute bottom-0 left-0 w-full bg-black/30 py-1 flex justify-center gap-2">
+          {gameHistory.slice(0, 15).map((game, i) => (
+            <div 
+              key={i} 
+              className={`text-xs font-mono px-2 py-1 rounded ${
+                game.crashPoint < 2 ? 'bg-red-500/80' : 'bg-cyan-500/80'
+              }`}
+            >
+              {formatMultiplier(game.crashPoint)}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
