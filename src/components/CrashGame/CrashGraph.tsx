@@ -1,7 +1,7 @@
-
 import React, { useRef, useEffect, useState } from "react";
 import { GameStatus } from "@/types/game";
 import { formatMultiplier, getMultiplierColor } from "@/utils/crash";
+import { Rocket } from "lucide-react";
 
 interface CrashGraphProps {
   multiplier: number;
@@ -14,6 +14,7 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const animationRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
+  const [rocketPosition, setRocketPosition] = useState({ x: 0, y: 0 });
 
   // Effect to set up canvas and handle resizing
   useEffect(() => {
@@ -34,6 +35,25 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
     window.addEventListener("resize", updateDimensions);
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
+
+  // Calculate position on the curve for the current multiplier
+  const calculateCurvePosition = (multiplier: number, width: number, height: number) => {
+    // This should match the curve drawing logic
+    const points = 100;
+    const progress = Math.min((multiplier - 1) * 10, points) / points;
+    const xScale = width / points;
+    const x = progress * points * xScale;
+    
+    // Calculate y position using the same function as in drawCurve
+    const calcY = (x: number, multiplier: number) => {
+      return height - (Math.pow(x, 0.5) * height) / Math.max(5, multiplier);
+    };
+    
+    const normalizedX = progress * points;
+    const y = calcY(normalizedX, Math.max(1, multiplier));
+    
+    return { x, y };
+  };
 
   // Effect to handle drawing the crash graph
   useEffect(() => {
@@ -72,6 +92,10 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
               drawGrid(ctx, canvas.width, canvas.height);
               drawGameHistory(ctx, canvas.width, canvas.height, gameHistory);
               drawCurve(ctx, canvas.width, canvas.height, multiplier);
+              
+              // Update rocket position
+              const pos = calculateCurvePosition(multiplier, canvas.width, canvas.height);
+              setRocketPosition(pos);
             }
             animationRef.current = requestAnimationFrame(animate);
           }
@@ -91,6 +115,9 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
     } else {
       // Game is waiting
       startTimeRef.current = null;
+      
+      // Reset rocket position
+      setRocketPosition({ x: 0, y: 0 });
       
       // Stop animation
       if (animationRef.current !== null) {
@@ -208,12 +235,44 @@ const CrashGraph: React.FC<CrashGraphProps> = ({ multiplier, status, gameHistory
     }
   };
 
+  // Calculate rocket rotation angle based on curve tangent
+  const calculateRocketRotation = () => {
+    // Calculate a reasonable rotation for the rocket to follow the curve
+    // Higher multiplier = steeper curve = more vertical rotation
+    const baseAngle = -45; // Start with a 45-degree upward angle
+    const maxAngle = -80; // Almost vertical at high multipliers
+    
+    // Gradually rotate more vertical as multiplier increases
+    const rotationAngle = baseAngle - Math.min((multiplier - 1) * 5, maxAngle - baseAngle);
+    
+    return rotationAngle;
+  };
+
   return (
     <div className="crash-graph w-full h-full bg-crash-card rounded-lg overflow-hidden relative">
       <canvas
         ref={canvasRef}
         className="w-full h-full"
       />
+      
+      {/* Rocket animation */}
+      {status === GameStatus.IN_PROGRESS && (
+        <div 
+          className="absolute transition-all duration-100 transform -translate-x-1/2 -translate-y-1/2 z-10"
+          style={{ 
+            left: `${rocketPosition.x}px`, 
+            top: `${rocketPosition.y}px`,
+            transform: `translate(-50%, -50%) rotate(${calculateRocketRotation()}deg)`,
+          }}
+        >
+          <Rocket 
+            size={28} 
+            className="rocket-icon animate-pulse-grow" 
+            fill={getMultiplierColor(multiplier)}
+            color={getMultiplierColor(multiplier)} 
+          />
+        </div>
+      )}
       
       {status !== GameStatus.WAITING && (
         <div 
