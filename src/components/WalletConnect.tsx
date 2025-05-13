@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Wallet, LogIn } from "lucide-react";
 import { useAptosWallet } from "./AptosWalletProvider";
@@ -16,6 +16,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ user, onWalletConnect }) 
   const { connectWallet, disconnectWallet, isConnecting, isConnected, address, signMessage } = useAptosWallet();
   const [isSigningIn, setIsSigningIn] = useState(false);
 
+  // Handle connecting wallet
   const handleConnectWallet = async () => {
     if (isConnected && address) {
       handleSignMessage();
@@ -37,6 +38,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ user, onWalletConnect }) 
     }
   };
 
+  // Handle signing message
   const handleSignMessage = async () => {
     if (!address) return;
     
@@ -69,6 +71,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ user, onWalletConnect }) 
     }
   };
 
+  // Handle disconnecting wallet
   const handleDisconnectWallet = () => {
     disconnectWallet();
     onWalletConnect({
@@ -83,7 +86,7 @@ const WalletConnect: React.FC<WalletConnectProps> = ({ user, onWalletConnect }) 
   };
 
   // If connected but not authenticated, prompt to sign message
-  React.useEffect(() => {
+  useEffect(() => {
     const isUserAuthenticated = user.isAuthenticated ?? false;
     if (isConnected && address && !isUserAuthenticated && !isSigningIn) {
       handleSignMessage();
